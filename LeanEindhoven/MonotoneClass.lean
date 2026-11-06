@@ -38,11 +38,34 @@ theorem IsMonotoneClass.biUnion_mem
   (n : ℕ) (h1 : ∀ b, f b ∈ M) (hf : Monotone f)
   : (⋃ b ≤ n, f b) ∈ M := by
     let g := fun i ↦ if i ≤ n then f i else f n
-    have t : ⋃ i, g i = ⋃ b ≤ n, f b := by sorry
+    have t : ⋃ i, g i = ⋃ b ≤ n, f b := by 
+      ext x
+      constructor 
+      · intro hx
+        rw [Set.mem_iUnion] at hx
+        obtain ⟨i, hi⟩ := hx
+        unfold g at hi
+        by_cases hle : i ≤ n
+        · simp [hle] at hi
+          rw [Set.mem_iUnion]
+          use i
+          simp [hle, hi]
+        · simp [hle] at hi
+          refine Set.mem_iUnion.mpr ⟨n, ?_⟩
+          simp only [Std.le_refl, Set.iUnion_true, hi] 
+      · intro hx   
+        rw [Set.mem_iUnion] at hx 
+        obtain ⟨i, hi⟩ := hx
+        simp only [Set.mem_iUnion, exists_prop] at hi 
+        rcases hi with ⟨hi,hx⟩
+        rw [Set.mem_iUnion]
+        use i
+        simp only [g, hi]
+        exact hx 
     rw [← t]
     refine hM.iUnion_mem g ?_ ?_
     · sorry
-    · sorry
+    · sorry 
 
 
 @[simp]
