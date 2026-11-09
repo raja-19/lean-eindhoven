@@ -85,33 +85,49 @@ def generateSigmaAlgebra (G : Set (Set α)) : Set α → Prop :=
   GenerateMeasurable G
 
 lemma Set.biUnion_le_mono (f : ℕ -> Set α) (i j : ℕ) (h_ij : i ≤ j) :
-  ⋃ k ≤ i, f k ⊆ ⋃ k ≤ j, f k := by
-    refine biUnion_subset_biUnion_left ?_
-    intro l hl
-    exact le_trans hl h_ij
+    ⋃ k ≤ i, f k ⊆ ⋃ k ≤ j, f k := by
+  refine biUnion_subset_biUnion_left ?_
+  intro l hl
+  exact le_trans hl h_ij
 
 
 def measurableSpace_of_monotoneClass {G : Set (Set α)} (h : IsSetAlgebra G) : MeasurableSpace α where
   MeasurableSet' := GenerateMonotoneClass G
   measurableSet_empty := .base ∅ h.empty_mem
-  measurableSet_iUnion := sorry
+  measurableSet_iUnion A hA := by 
+    suffices ∀ n, GenerateMonotoneClass G (⋃ i ≤ n, A i) by 
+      
+      sorry
+    suffices ∀ B C, (GenerateMonotoneClass G B) → (GenerateMonotoneClass G C) 
+        → (GenerateMonotoneClass G (B ∪ C)) by
+      sorry
+    intro B C hB hC
+    let MB := {D | GenerateMonotoneClass G D ∧ GenerateMonotoneClass G (B ∪ D)}
+    have GinMB : (G ⊆ MB) := by
+
+      sorry
+    have IsMonotoneMB : (IsMonotoneClass MB) := by
+      sorry
+    have MinMB : ∀ D, GenerateMonotoneClass G D → D ∈ MB := by
+      sorry
+  
   measurableSet_compl := sorry
 
 theorem MeasurableSpace.GenerateMeasurable_eq_GenerateMonotoneClass (G : Set (Set α)) (h : IsSetAlgebra G) :
-  measurableSpace_of_monotoneClass h = generateFrom G := by
-    apply le_antisymm
-    · intro s hs
-      induction hs with
-        | base t t_mem => exact .basic t t_mem
-        | iUnion t ht hn ih => exact GenerateMeasurable.iUnion t ih
-        | iInter t ht hn ih =>
-            rw [Set.iInter_eq_compl_iUnion_compl]
-            refine GenerateMeasurable.compl (⋃ i, (t i)ᶜ) ?_
-            refine GenerateMeasurable.iUnion (fun i ↦  (t i)ᶜ) ?_
-            intro i
-            exact .compl (t i) (ih i)
-    · apply MeasurableSpace.generateFrom_le
-      intro t ht
-      unfold MeasurableSet
-      simp only [measurableSpace_of_monotoneClass]
-      exact .base t ht
+    measurableSpace_of_monotoneClass h = generateFrom G := by
+  apply le_antisymm
+  · intro s hs
+    induction hs with
+      | base t t_mem => exact .basic t t_mem
+      | iUnion t ht hn ih => exact GenerateMeasurable.iUnion t ih
+      | iInter t ht hn ih =>
+          rw [Set.iInter_eq_compl_iUnion_compl]
+          refine GenerateMeasurable.compl (⋃ i, (t i)ᶜ) ?_
+          refine GenerateMeasurable.iUnion (fun i ↦  (t i)ᶜ) ?_
+          intro i
+          exact .compl (t i) (ih i)
+  · apply MeasurableSpace.generateFrom_le
+    intro t ht
+    unfold MeasurableSet
+    simp only [measurableSpace_of_monotoneClass]
+    exact .base t ht
