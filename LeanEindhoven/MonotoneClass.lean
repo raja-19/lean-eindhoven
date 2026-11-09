@@ -24,7 +24,7 @@ theorem IsMonotoneClass_generateMonotoneClass (G : Set (Set α)) :
   iUnion_mem := .iUnion
   iInter_mem := .iInter
 
-theorem generateMonotoneClass_subset (G M : Set (Set α))
+theorem generateMonotoneClass_subset {G M : Set (Set α)}
     (hGM : G ⊆ M) (hM : IsMonotoneClass M) : (generateMonotoneClass G) ⊆ M := by
   intro s hs
   induction hs with
@@ -91,43 +91,98 @@ lemma Set.biUnion_le_mono (f : ℕ -> Set α) (i j : ℕ) (h_ij : i ≤ j) :
   exact le_trans hl h_ij
 
 
-def measurableSpace_of_monotoneClass {G : Set (Set α)} (h : IsSetAlgebra G) : MeasurableSpace α where
-  MeasurableSet' := GenerateMonotoneClass G
-  measurableSet_empty := .base ∅ h.empty_mem
-  measurableSet_iUnion A hA := by 
-    suffices ∀ n, GenerateMonotoneClass G (⋃ i ≤ n, A i) by 
-      
-      sorry
-    suffices ∀ B C, (GenerateMonotoneClass G B) → (GenerateMonotoneClass G C) 
-        → (GenerateMonotoneClass G (B ∪ C)) by
-      sorry
-    intro B C hB hC
-    let MB := {D | GenerateMonotoneClass G D ∧ GenerateMonotoneClass G (B ∪ D)}
-    have GinMB : (G ⊆ MB) := by
+def measurableSpace_of_monotoneClass {G : Set (Set α)} (h : IsSetAlgebra G)
+  : MeasurableSpace α where
+      MeasurableSet' := GenerateMonotoneClass G
+      measurableSet_empty := .base ∅ h.empty_mem
+      measurableSet_iUnion f hf := by
+        set M := generateMonotoneClass G
+        suffices ∀ n, (⋃ i ≤ n, f i) ∈ M by
+          let g := fun i ↦ ⋃ j ≤ i, f j
+          rw [← Set.biUnion_le_eq_iUnion]
+          refine .iUnion g this (Set.biUnion_le_mono f)
+        suffices ∀ A ∈ M, ∀ B ∈ M, A ∪ B ∈ M by
+          intro n
+          induction n with
+            | zero =>
+                simp only [nonpos_iff_eq_zero, Set.iUnion_iUnion_eq_left]
+                exact hf 0
+            | succ m ih =>
+                rw [Set.biUnion_le_succ]
+                exact this (⋃ i ≤ m, f i) ih (f (m + 1)) (hf (m + 1))
+        intro A hA
+        let M_A := {B ∈ M | A ∪ B ∈ M}
+        have : M_A = M := by
+          apply Set.Subset.antisymm
+          · exact Set.sep_subset M fun x ↦ A ∪ x ∈ M
+          · apply generateMonotoneClass_subset
+            · intro g hg
+              simp only [M_A]
+              constructor
+              · exact .base g hg
+              · induction hA with
+                  | base s hs =>
+                      apply GenerateMonotoneClass.base
+                      exact h.union_mem hs hg
+                  | iUnion f hf hf_mono ih =>
+                      rw [Set.iUnion_union]
+                      apply GenerateMonotoneClass.iUnion
+                      · exact ih
+                      · exact Monotone.union hf_mono monotone_const
+                  | iInter f hf hf_antitone ih =>
+                      rw [Set.iInter_union]
+                      apply GenerateMonotoneClass.iInter
+                      · exact ih
+                      · exact Antitone.union hf_antitone antitone_const
+            · refine ⟨?_, ?_⟩
+              · intro s hs hs_mono
+                simp only [M_A]
+                constructor
+                · have : ∀ (i : ℕ), s i ∈ M := by
+                    intro i
+                    exact Set.mem_of_mem_inter_left (hs i)
+                  exact GenerateMonotoneClass.iUnion s this hs_mono
+                · let g := fun i ↦ A ∪ s i
+                  rw [Set.union_iUnion]
+                  refine GenerateMonotoneClass.iUnion g ?_ ?_
+                  · exact fun i ↦ (hs i).right
+                  · intro a b h_ab
+                    exact Set.union_subset_union_right A (hs_mono h_ab)
+              · intro s hs hs_antitone
+                simp only [M_A]
+                constructor
+                · have : ∀ (i : ℕ), s i ∈ M := by
+                    intro i
+                    exact Set.mem_of_mem_inter_left (hs i)
+                  exact GenerateMonotoneClass.iInter s this hs_antitone
+                · let g := fun i ↦ A ∪ s i
+                  rw [Set.union_iInter]
+                  refine GenerateMonotoneClass.iInter g ?_ ?_
+                  · exact fun i ↦ (hs i).right
+                  · intro a b h_ab
+                    exact Set.union_subset_union_right A (hs_antitone h_ab)
+        intro B hB
+        rw [← this] at hB
+        simp [M_A] at hB
+        exact hB.right
+      measurableSet_compl := by sorry
 
-      sorry
-    have IsMonotoneMB : (IsMonotoneClass MB) := by
-      sorry
-    have MinMB : ∀ D, GenerateMonotoneClass G D → D ∈ MB := by
-      sorry
-  
-  measurableSet_compl := sorry
-
-theorem MeasurableSpace.GenerateMeasurable_eq_GenerateMonotoneClass (G : Set (Set α)) (h : IsSetAlgebra G) :
+theorem MeasurableSpace.GenerateMeasurable_eq_GenerateMonotoneClass
+  (G : Set (Set α)) (h : IsSetAlgebra G) :
     measurableSpace_of_monotoneClass h = generateFrom G := by
-  apply le_antisymm
-  · intro s hs
-    induction hs with
-      | base t t_mem => exact .basic t t_mem
-      | iUnion t ht hn ih => exact GenerateMeasurable.iUnion t ih
-      | iInter t ht hn ih =>
-          rw [Set.iInter_eq_compl_iUnion_compl]
-          refine GenerateMeasurable.compl (⋃ i, (t i)ᶜ) ?_
-          refine GenerateMeasurable.iUnion (fun i ↦  (t i)ᶜ) ?_
-          intro i
-          exact .compl (t i) (ih i)
-  · apply MeasurableSpace.generateFrom_le
-    intro t ht
-    unfold MeasurableSet
-    simp only [measurableSpace_of_monotoneClass]
-    exact .base t ht
+      apply le_antisymm
+      · intro s hs
+        induction hs with
+          | base t t_mem => exact .basic t t_mem
+          | iUnion t ht hn ih => exact GenerateMeasurable.iUnion t ih
+          | iInter t ht hn ih =>
+              rw [Set.iInter_eq_compl_iUnion_compl]
+              refine GenerateMeasurable.compl (⋃ i, (t i)ᶜ) ?_
+              refine GenerateMeasurable.iUnion (fun i ↦  (t i)ᶜ) ?_
+              intro i
+              exact .compl (t i) (ih i)
+      · apply MeasurableSpace.generateFrom_le
+        intro t ht
+        unfold MeasurableSet
+        simp only [measurableSpace_of_monotoneClass]
+        exact .base t ht
