@@ -14,7 +14,7 @@ noncomputable def Ear (m : ℕ) : Set ℂ :=
 
 lemma isClosed_Ear (m : ℕ) : IsClosed (Ear m) := by
   refine IsClosed.union ?_ ?_
-  · apply isClosed_iUnion_of_finite 
+  · apply isClosed_iUnion_of_finite
     intro k
     exact isClosed_sphere
   · exact isClosed_closedBall
@@ -112,7 +112,34 @@ lemma H1isCompact : CompactSpace H1 := by
   rw [← isCompact_iff_compactSpace]
   exact isCompact_of_isClosed_isBounded H1isClosed H1isBounded
 
+-- Generalize IsPathConnected.union to infinite number of sets. Then this follows directly.
+
+lemma IsPathConnected.iUnion {ι α : Type*} [hι : Nonempty ι] [TopologicalSpace α] (f : ι → Set α)
+    (hpc : ∀ i, IsPathConnected (f i)) (hne : Nonempty (⋂ i, f i)) :
+    IsPathConnected (⋃ i, f i) := by
+  obtain ⟨x, hx⟩ := hne
+  use x
+  constructor
+  · rw [Set.mem_iUnion]
+    obtain ⟨i⟩ := hι
+    use i
+    rw [Set.mem_iInter] at hx
+    exact hx i
+  · intro y hy
+    rw [Set.mem_iUnion] at hy
+    obtain ⟨i, hi⟩ := hy
+    refine JoinedIn.mono ?_ (subset_iUnion f i)
+    rw [Set.mem_iInter] at hx
+    refine (hpc i).joinedIn x (hx i) y hi
 
 -- H1 is PathConnected
-lemma H1isPathConnected : PathConnectedSpace H1 := sorry
--- Generalize IsPathConnected.union to infinite number of sets. Then this follows directly.
+lemma H1isPathConnected : IsPathConnected H1 := by
+  apply IsPathConnected.iUnion
+  · intro i
+    apply isPathConnected_sphere
+    <;> simp [r]
+  · use 0
+    rw [Set.mem_iInter]
+    intro i
+    rw [p, r, mem_sphere_iff_norm, ← Complex.ofReal]
+    simp
