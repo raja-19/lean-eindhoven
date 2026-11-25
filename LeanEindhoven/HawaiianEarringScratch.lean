@@ -145,5 +145,5 @@ lemma H1isPathConnected : IsPathConnected H1 := by
   · use 0
     rw [Set.mem_iInter]
     intro i
-    rw [p, r, mem_sphere_iff_norm, ← Complex.ofReal]
+    rw [S, p, r, mem_sphere_iff_norm, ← Complex.ofReal]
     simp
