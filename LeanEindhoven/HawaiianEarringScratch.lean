@@ -12,21 +12,13 @@ noncomputable def CB (n : ℕ) : Set ℂ := closedBall (p n) (r n)
 noncomputable def H1 : Set ℂ := ⋃ n, S n
 
 noncomputable def Ear (m : ℕ) : Set ℂ :=
-  (⋃ n : Fin (m + 1), sphere (p n) (r n)) ∪ CB (m + 1)
+  (⋃ n : Fin (m + 1), S n) ∪ CB (m + 1)
 
-lemma isClosed_Ear (m : ℕ) : IsClosed (Ear m) := by
-  refine IsClosed.union ?_ ?_
-  · apply isClosed_iUnion_of_finite
-    intro k
-    exact isClosed_sphere
-  · exact isClosed_closedBall
+lemma isClosed_Ear (m : ℕ) : IsClosed (Ear m) :=
+  IsClosed.union (isClosed_iUnion_of_finite (fun _ ↦ isClosed_sphere)) isClosed_closedBall
 
-lemma isBounded_Ear (m : ℕ) : IsBounded (Ear m) := by
-  refine IsBounded.union ?_ ?_
-  · rw [isBounded_iUnion]
-    intro k
-    exact isBounded_sphere
-  · exact isBounded_closedBall
+lemma isBounded_Ear (m : ℕ) : IsBounded (Ear m) :=
+  IsBounded.union (isBounded_iUnion.mpr (fun _ ↦ isBounded_sphere)) isBounded_closedBall
 
 lemma isCompact_Ear (m : ℕ) : CompactSpace (Ear m) := by
   rw [← isCompact_iff_compactSpace]
@@ -34,7 +26,7 @@ lemma isCompact_Ear (m : ℕ) : CompactSpace (Ear m) := by
 
 
 lemma Ear_union_H1_closedBall (m : ℕ) : Ear m = H1 ∪ CB (m + 1) := by
-  unfold Ear H1
+  unfold H1
   ext x
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · cases h with
@@ -43,7 +35,6 @@ lemma Ear_union_H1_closedBall (m : ℕ) : Ear m = H1 ∪ CB (m + 1) := by
       left
       rw [Set.mem_iUnion]
       use n
-      exact hn
     | inr h1 => exact Or.inr h1
   · cases h with
     | inl h1 =>
@@ -51,8 +42,7 @@ lemma Ear_union_H1_closedBall (m : ℕ) : Ear m = H1 ∪ CB (m + 1) := by
       by_cases! h : (n ≥ m + 1)
       · right
         have h2 : r n + dist (p n) (p (m + 1)) ≤ r (m + 1) := by
-          unfold r p
-          simp
+          simp [r, p]
           rw [sub_sq_comm, sqrt_sq]
           · linarith
           · rw [sub_nonneg]
@@ -62,7 +52,6 @@ lemma Ear_union_H1_closedBall (m : ℕ) : Ear m = H1 ∪ CB (m + 1) := by
       · left
         rw [Set.mem_iUnion]
         use Fin.mk n h
-        exact hn
     | inr h1 => exact Or.inr h1
 
 lemma H1_inter_Ear : H1 = ⋂ n, Ear n := by
