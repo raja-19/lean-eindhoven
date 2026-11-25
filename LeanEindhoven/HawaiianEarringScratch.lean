@@ -7,10 +7,12 @@ open Metric Set Relation Complex Bornology Real
 /-- Subspace definition of Hawaiian Earring -/
 noncomputable def p (n : ℕ) : ℂ := ⟨1 / n, 0⟩
 noncomputable def r (n : ℕ) : ℝ := 1 / n
-noncomputable def H1 : Set ℂ := ⋃ n, sphere (p n) (r n)
+noncomputable def S (n : ℕ) : Set ℂ := sphere (p n) (r n)
+noncomputable def CB (n : ℕ) : Set ℂ := closedBall (p n) (r n)
+noncomputable def H1 : Set ℂ := ⋃ n, S n
 
 noncomputable def Ear (m : ℕ) : Set ℂ :=
-  (⋃ n : Fin (m + 1), sphere (p n) (r n)) ∪ closedBall (p (m + 1)) (r (m + 1))
+  (⋃ n : Fin (m + 1), sphere (p n) (r n)) ∪ CB (m + 1)
 
 lemma isClosed_Ear (m : ℕ) : IsClosed (Ear m) := by
   refine IsClosed.union ?_ ?_
@@ -31,7 +33,7 @@ lemma isCompact_Ear (m : ℕ) : CompactSpace (Ear m) := by
   exact isCompact_of_isClosed_isBounded (isClosed_Ear m) (isBounded_Ear m)
 
 
-lemma Ear_union_H1_closedBall (m : ℕ) : Ear m = H1 ∪ closedBall (p (m + 1)) (r (m + 1)) := by
+lemma Ear_union_H1_closedBall (m : ℕ) : Ear m = H1 ∪ CB (m + 1) := by
   unfold Ear H1
   ext x
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
@@ -41,6 +43,7 @@ lemma Ear_union_H1_closedBall (m : ℕ) : Ear m = H1 ∪ closedBall (p (m + 1)) 
       left
       rw [Set.mem_iUnion]
       use n
+      exact hn
     | inr h1 => exact Or.inr h1
   · cases h with
     | inl h1 =>
@@ -59,16 +62,17 @@ lemma Ear_union_H1_closedBall (m : ℕ) : Ear m = H1 ∪ closedBall (p (m + 1)) 
       · left
         rw [Set.mem_iUnion]
         use Fin.mk n h
+        exact hn
     | inr h1 => exact Or.inr h1
 
 lemma H1_inter_Ear : H1 = ⋂ n, Ear n := by
     simp only [Ear_union_H1_closedBall]
     rw [← union_iInter]
-    have h1 : ⋂ i, closedBall (p (i + 1)) (r (i + 1)) = {⟨0,0⟩} := by
+    have h1 : ⋂ i, CB (i + 1) = {⟨0,0⟩} := by
       ext x
       refine ⟨fun f ↦ ?_, fun f ↦ ?_⟩
       <;> rw [mem_singleton_iff] at *
-      · have h (n : ℕ) : ∀ x ∈ closedBall (p n) (r n), ‖x‖ ≤ 2 / n := by
+      · have h (n : ℕ) : ∀ x ∈ CB n, ‖x‖ ≤ 2 / n := by
           intro y hy
           have h1 := norm_le_of_mem_closedBall hy
           simp only [p, r, one_div] at h1
@@ -90,13 +94,13 @@ lemma H1_inter_Ear : H1 = ⋂ n, Ear n := by
           trivial
       · rw [mem_iInter]
         intro i
-        simp [p, r, f]
+        simp [CB, p, r, f]
         rw [sqrt_sq (by linarith)]
     rw [h1]
     symm
     apply union_eq_self_of_subset_right
     apply subset_iUnion_of_subset 0
-    simp [p, r]
+    simp [S, p, r]
 
 lemma H1isClosed : IsClosed H1 := by
   rw [H1_inter_Ear]
